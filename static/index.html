@@ -1,31 +1,45 @@
 <html>
     <head>
-		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web&display=swap">
-        <link rel="stylesheet" href="/styles.css"/> 
-        <link rel="stylesheet" href="/codemirror.css">
-        <link rel="stylesheet" href="/pastel-on-dark.css">
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css?family=Titillium+Web&display=swap"
+        />
+        <link rel="stylesheet" href="/styles.css" />
+        <link rel="stylesheet" href="/codemirror.css" />
+        <link rel="stylesheet" href="/pastel-on-dark.css" />
         <script src="https://kit.fontawesome.com/2693b6feee.js"></script>
         <script src="/codemirror.js"></script>
     </head>
     <body>
         <div id="container">
             <h1>Recurser</h1>
-            <p>Write a recursive function and watch to see how it is executed!</p>
+            <p>
+                Write a recursive function and watch to see how it is executed!
+            </p>
             <div id="editor">
-                <button id="play-btn">
-                    <i class="fa fa-play"></i>Play
-                </button>
+                <button id="play-btn"><i class="fa fa-play"></i>Play</button>
                 <textarea></textarea>
             </div>
-            <div id="output">
-
-            </div>
+            <div id="output"></div>
         </div>
         <script>
             var textArea = document.querySelector("textarea");
+            var playBtn = document.querySelector("#play-btn");
             var editor = CodeMirror.fromTextArea(textArea, {
                 lineNumbers: true,
-                theme: "pastel-on-dark",
+                theme: "pastel-on-dark"
+            });
+
+            playBtn.addEventListener("click", function() {
+                fetch("/api/execute/", {
+                    method: "post",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ x: 1 })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(data);
+                    });
             });
         </script>
     </body>
