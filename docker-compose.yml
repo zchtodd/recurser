@@ -1,0 +1,20 @@
+version: '3'
+
+volumes:
+    sock:
+
+services:
+    nginx:
+        image: nginx
+        volumes:
+            - ./nginx.conf:/etc/nginx/nginx.conf
+            - sock:/sock
+        ports:
+            - "80:80"
+
+    app:
+        command: gunicorn --bind=unix:/sock/app.sock --workers=4 wsgi
+        image: recurser
+        volumes:
+            - ./:/usr/src/app
+            - sock:/sock/
