@@ -1,0 +1,59 @@
+@font-face{
+    font-family:"Bebas Neue W01 Regular";
+    src:url("bebas.ttf") format("truetype");
+}
+
+body {
+    font-family: "Titillium Web", sans-serif;
+    background-color: #1e1e20;
+    box-sizing: border-box;
+    min-height: 100%;
+    color: white;
+    padding: 3%;
+    margin: 0;
+}
+
+h1 {
+    font-family: "Bebas Neue W01 Regular", sans-serif;
+}
+
+#container {
+    max-width: 1000px;
+    margin: 0px auto;
+}
+
+#editor {
+    position: relative;
+}
+
+#output {
+
+}
+
+#play-btn {
+    position: absolute;
+    z-index: 9999;
+    width: 85px;
+    cursor: pointer;
+    top: 10px;
+    right: 10px;
+    color: #ddd;
+    font-family: "Bebas Neue W01 Regular", sans-serif;
+    border: 1px solid #ddd;
+    background-color: rgba(0, 0, 0, 0);
+    padding: .375rem .75rem;
+    font-size: 14px;
+    letter-spacing: 2px;
+}
+
+#play-btn i {
+    font-size: 12px;
+    margin-right: 7px;
+}
+
+#play-btn:hover {
+    transition-property: color, border-color;
+    transition-duration: 0.5s;
+    color: white;
+    border-color: white;
+}
