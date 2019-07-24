@@ -30,15 +30,48 @@
                 theme: "pastel-on-dark"
             });
 
+            var widget = null;
+            var marker = null;
+
+            function createLineWidget(error) {
+                var container = document.createElement("div");
+                container.className = "line-error";
+
+                var icon = container.appendChild(document.createElement("i"));
+                icon.className = "line-error-icon fas fa-exclamation-triangle";
+
+                container.appendChild(document.createTextNode(error.message));
+                return editor.addLineWidget(error.lineno - 1, container, {
+                    coverGutter: false,
+                    noHScroll: true
+                });
+            }
+
             playBtn.addEventListener("click", function() {
+                if (widget) {
+                    editor.removeLineWidget(widget);
+                }
+
+                if (marker) {
+                    marker.clear();
+                }
+
                 fetch("/api/execute/", {
                     method: "post",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ x: 1 })
+                    body: JSON.stringify({ code: editor.getValue() })
                 })
                     .then(response => response.json())
-                    .then(data => {
-                        console.log(data);
+                    .then(response => {
+                        let error = response.error;
+                        if (error) {
+                            marker = editor.markText(
+                                { line: error.lineno - 1, ch: error.col },
+                                { line: error.lineno - 1, ch: error.col + 1 },
+                                { className: "error-bg" }
+                            );
+                            widget = createLineWidget(error);
+                        }
                     });
             });
         </script>

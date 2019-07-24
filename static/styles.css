@@ -32,11 +32,12 @@ h1 {
 
 #play-btn {
     position: absolute;
+	outline: none;
     z-index: 9999;
     width: 85px;
     cursor: pointer;
     top: 10px;
-    right: 10px;
+    right: 25px;
     color: #ddd;
     font-family: "Bebas Neue W01 Regular", sans-serif;
     border: 1px solid #ddd;
@@ -56,4 +57,11 @@ h1 {
     transition-duration: 0.5s;
     color: white;
     border-color: white;
+}
+
+.line-error { width: 50%; font-family: arial; font-size: 70%; background: #ddb; color: #800000; padding: 2px 5px 3px; }
+.line-error-icon {color: #800000; font-weight: bold; margin-right: 7px;}
+
+.error-bg {
+    background-color: #800000;
 }

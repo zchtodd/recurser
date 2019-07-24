@@ -364,3 +364,7 @@ fundef = (
 ).setParseAction(FunctionDef)
 
 program = (fundef + function_call + semicolon).setParseAction(Program)
+
+
+def parse(code):
+    return program.parseString(code, parseAll=True)[0]
