@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 import operator
 import pyparsing as pp
 
@@ -63,7 +61,7 @@ class Number(object):
         self.value = "".join(toks[0])
 
     def execute(self, context):
-        return Decimal(self.value)
+        return float(self.value)
 
 
 class Identifier(object):
