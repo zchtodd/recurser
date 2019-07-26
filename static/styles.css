@@ -27,7 +27,8 @@ h1 {
 }
 
 #output {
-
+    margin-top: 20px;
+    height: 40%;
 }
 
 #play-btn {

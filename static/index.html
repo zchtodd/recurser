@@ -7,8 +7,10 @@
         <link rel="stylesheet" href="/styles.css" />
         <link rel="stylesheet" href="/codemirror.css" />
         <link rel="stylesheet" href="/pastel-on-dark.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.9.7/d3.js"></script>
         <script src="https://kit.fontawesome.com/2693b6feee.js"></script>
         <script src="/codemirror.js"></script>
+        <script src="/recurser.js"></script>
     </head>
     <body>
         <div id="container">
@@ -71,6 +73,10 @@
                                 { className: "error-bg" }
                             );
                             widget = createLineWidget(error);
+                        } else {
+                            document
+                                .querySelector("#output")
+                                .appendChild(drawTree(response.nodes));
                         }
                     });
             });

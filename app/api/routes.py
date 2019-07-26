@@ -26,6 +26,6 @@ def index():
     except ParseException as err:
         res["error"] = {"lineno": err.lineno, "col": err.col, "message": str(err)}
     else:
-        res["nodes"] = [build_nodes(context.root_frame)]
+        res["nodes"] = build_nodes(context.root_frame)
 
     return res
