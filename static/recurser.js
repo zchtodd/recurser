@@ -1,72 +1,136 @@
-let margin = {top: 20, right: 50, bottom: 50, left: 50};
-let width = 1000 - margin.left - margin.right;
-let height = 400 - margin.top - margin.bottom;
+let width = 1000;
+let height = 400;
 
-function tree(data) {
-    const root = d3.hierarchy(data);
-    root.dx = 10;
-    root.dy = width / (root.height + 1);
-    //return d3.tree().size([height, width])(root);
-    return d3.tree().nodeSize([50,50])(root);
+let NODE_SIZE = 30;
+let NODE_SEP = NODE_SIZE * 2 + 10;
+
+class Node {
+    constructor(x, y, prevSibling) {
+        this.x = x;
+        this.y = y;
+        this.finalX = 0;
+        this.modifier = 0;
+
+        this.prevSibling = prevSibling;
+        this.children = [];
+    }
 }
 
-function drawTree(data) {
-    const root = tree(data);
+function calculateInitialValues(node) {
+    for (let i = 0; i < node.children.length; i++) {
+        calculateInitialValues(node.children[i]);
+    }
 
-    let x0 = Infinity;
-    let x1 = -x0;
-    root.each(d => {
-        if (d.x > x1) x1 = d.x;
-        if (d.x < x0) x0 = d.x;
-    });
+    if (node.prevSibling) {
+        node.x = node.prevSibling.x + 3;
+    } else {
+        node.x = 0;
+    }
 
-    const svg = d3.select("svg");
+    if (node.children.length == 1) {
+        node.modifier = node.x;
+    } else if (node.children.length >= 2) {
+        let totalX = 0;
+        for (let i = 0; i < node.children.length; i++) {
+            totalX += node.children[i].x;
+        }
+        node.modifier = node.x - totalX / 2;
+    }
+}
 
-    const g = svg
-        .append("g")
-        .attr("font-family", "sans-serif")
-        .attr("font-size", 10)
-    //    .attr("transform", `translate(${margin.left}, ${margin.top})`);
-        .attr("transform", `translate(200,200)`);
+function calculateFinalValues(node, modSum) {
+    node.finalX = node.x + modSum;
+    for (let i = 0; i < node.children.length; i++) {
+        calculateFinalValues(node.children[i], node.modifier + modSum);
+    }
+}
 
-    const link = g
-        .append("g")
-        .attr("fill", "none")
-        .attr("stroke", "#555")
-        .attr("stroke-opacity", 0.4)
-        .attr("stroke-width", 1.5)
-        .selectAll("path")
-        .data(root.links())
-        .join("path")
-        .attr(
-            "d",
-            d3
-                .linkHorizontal()
-                .x(d => d.y)
-                .y(d => d.x)
+function buildTree(dataNode, prevSibling, level) {
+    let root = new Node(0, level, prevSibling);
+    for (let i = 0; i < dataNode.children.length; i++) {
+        root.children.push(
+            buildTree(
+                dataNode.children[i],
+                i >= 1 ? root.children[i - 1] : null,
+                level + 1
+            )
         );
+    }
+    return root;
+}
 
-    const node = g
-        .append("g")
-        .attr("stroke-linejoin", "round")
-        .attr("stroke-width", 3)
-        .selectAll("g")
-        .data(root.descendants())
-        .join("g")
-        .attr("transform", d => `translate(${d.y},${d.x})`);
+function getDimensions(root) {
+    let minWidth = Infinity;
+    let maxWidth = -minWidth;
 
-    node.append("circle")
-        .attr("fill", d => (d.children ? "#555" : "#999"))
-        .attr("r", 20);
+    let minHeight = Infinity;
+    let maxHeight= -minWidth;
 
-    node.append("text")
-        .attr("dy", "0.31em")
-        .attr("x", d => (d.children ? -6 : 6))
-        .attr("text-anchor", d => "middle")
-        .text(d => d.data.retval)
-        .clone(true)
-        .lower()
-        .attr("stroke", "white");
+    let nodes = [root];
+    while (nodes.length) {
+        let node = nodes.shift();
+        nodes = nodes.concat(node.children);
 
-    return svg.node();
+        if (node.finalX < minWidth) {
+            minWidth = node.finalX;
+        }
+
+        if (node.finalX > maxWidth) {
+            maxWidth = node.finalX;
+        }
+
+        if (node.y < minHeight) {
+            minHeight = node.y;
+        }
+
+        if (node.y > maxHeight) {
+            maxHeight = node.y;
+        }
+    }
+    return [maxWidth - minWidth, maxHeight - minHeight];
+}
+
+function drawTree(svg, data) {
+    let root = buildTree(data, null, 0);
+
+    calculateInitialValues(root);
+    calculateFinalValues(root, 0);
+
+    let [treeHeight, treeWidth] = getDimensions(root);
+    let levelWidth = width / (treeWidth + 1);
+    let levelHeight = height / (treeHeight + 1);
+
+    NODE_SIZE = Math.min(NODE_SIZE, levelWidth, levelHeight);
+
+    let nodes = [root];
+    while (nodes.length) {
+        let node = nodes.shift();    
+        
+        /*
+        for (let i = 0; i < node.children.length; i++) {
+            let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", node.finalX * NODE_SEP);
+            line.setAttribute("y1", node.y * NODE_SEP);
+            line.setAttribute("x2", node.children[i].finalX * NODE_SEP);
+            line.setAttribute("y2", node.children[i].y * NODE_SEP);
+            line.setAttribute("stroke", "red");
+
+    		svg.appendChild(line);
+        }
+        */
+
+
+        nodes = nodes.concat(node.children);
+
+        let circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        let x = node.finalX * levelHeight + levelHeight / 2 - NODE_SIZE / 2;
+        let y = node.y * levelWidth + levelWidth / 2 - NODE_SIZE / 2;
+
+		circ.setAttribute("cx", x);
+		circ.setAttribute("cy", y);
+		circ.setAttribute("fill", "red");
+		circ.setAttribute("r", NODE_SIZE);
+
+		svg.appendChild(circ);
+    }
 }
