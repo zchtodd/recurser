@@ -31,21 +31,34 @@ h1 {
     height: 40%;
 }
 
-#play-btn {
-    position: absolute;
-	outline: none;
-    z-index: 9999;
-    width: 85px;
-    cursor: pointer;
-    top: 10px;
-    right: 25px;
-    color: #ddd;
+.control {
     font-family: "Bebas Neue W01 Regular", sans-serif;
-    border: 1px solid #ddd;
     background-color: rgba(0, 0, 0, 0);
+    border: 1px solid #ddd;
+	outline: none;
+    color: #ddd;
     padding: .375rem .75rem;
     font-size: 14px;
     letter-spacing: 2px;
+    cursor: pointer;
+}
+
+.control:hover {
+    transition-property: color, border-color;
+    transition-duration: 0.5s;
+    color: white;
+    border-color: white;
+}
+
+#control-container {
+    top: 10px;
+    z-index: 9999;
+    position: absolute;
+    right: 25px;
+}
+
+#play-btn {
+    width: 85px;
 }
 
 #play-btn i {
@@ -53,11 +66,14 @@ h1 {
     margin-right: 7px;
 }
 
-#play-btn:hover {
-    transition-property: color, border-color;
-    transition-duration: 0.5s;
-    color: white;
-    border-color: white;
+#examples-select {
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    margin-right: 4px;
+}
+
+#examples-select option {
+    color: black;
 }
 
 .line-error { width: 50%; font-family: arial; font-size: 70%; background: #ddb; color: #800000; padding: 2px 5px 3px; }

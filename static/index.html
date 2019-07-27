@@ -19,7 +19,13 @@
                 Write a recursive function and watch to see how it is executed!
             </p>
             <div id="editor">
-                <button id="play-btn"><i class="fa fa-play"></i>Play</button>
+                <div id="control-container">
+                    <select id="examples-select" class="control">
+                        <option value="fibonacci">Fibonacci</option>
+                        <option value="factorial">Factorial</option> 
+                    </select>
+                    <button id="play-btn" class="control"><i class="fa fa-play"></i>Play</button>
+                </div>
                 <textarea></textarea>
             </div>
             <div id="output">
@@ -34,6 +40,7 @@
         </div>
         <script>
             var textArea = document.querySelector("textarea");
+            var examplesSelect = document.querySelector("#examples-select");
             var playBtn = document.querySelector("#play-btn");
             var editor = CodeMirror.fromTextArea(textArea, {
                 lineNumbers: true,
@@ -42,6 +49,8 @@
 
             var widget = null;
             var marker = null;
+
+            editor.setValue(examples.fibonacci);
 
             function createLineWidget(error) {
                 var container = document.createElement("div");
@@ -56,6 +65,10 @@
                     noHScroll: true
                 });
             }
+
+            examplesSelect.addEventListener("change", function(evt) {
+                editor.setValue(examples[evt.target.value]);
+            });
 
             playBtn.addEventListener("click", function() {
                 if (widget) {

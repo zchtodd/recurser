@@ -1,3 +1,23 @@
+let fibonacci = `fun(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fun(n - 1) + fun(n - 2);
+}
+
+fun(5);`;
+
+let factorial = `fun(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return n * fun(n - 1);
+}
+
+fun(5);`;
+
+let examples = {fibonacci: fibonacci, factorial: factorial};
+
 let margin = { top: 0, right: 0, bottom: 0, left: 0 };
 let width = 1000 - margin.left - margin.right;
 let height = 400 - margin.top - margin.bottom;
@@ -135,7 +155,7 @@ function drawTree(svg, data) {
             line.setAttribute("y1", y1);
             line.setAttribute("x2", x2);
             line.setAttribute("y2", y2);
-            line.setAttribute("stroke", "red");
+            line.setAttribute("stroke", "steelblue");
 
             g.appendChild(line);
         }
@@ -144,7 +164,7 @@ function drawTree(svg, data) {
 
         circ.setAttribute("cx", x1);
         circ.setAttribute("cy", y1);
-        circ.setAttribute("fill", "red");
+        circ.setAttribute("fill", "steelblue");
         circ.setAttribute("r", NODE_SIZE);
 
         g.appendChild(circ);
