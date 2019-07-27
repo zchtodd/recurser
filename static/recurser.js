@@ -1,4 +1,4 @@
-let margin = { top: 100, right: 20, bottom: 100, left: 20 };
+let margin = { top: 0, right: 0, bottom: 0, left: 0 };
 let width = 1000 - margin.left - margin.right;
 let height = 400 - margin.top - margin.bottom;
 
@@ -96,11 +96,12 @@ function drawTree(svg, data) {
     calculateInitialValues(root);
     calculateFinalValues(root, 0);
 
-    //let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    //g.setAttribute(
-    //    "transform",
-    //    `translate(${margin.left}, ${margin.top}) rotate(-90)`
-    //);
+    let existingG = svg.querySelector("g");
+    if (existingG) {
+        svg.removeChild(existingG);
+    }
+
+    let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
     let [treeWidth, treeHeight] = getDimensions(root);
     let levelWidth = width / (treeWidth + 1);
@@ -136,7 +137,7 @@ function drawTree(svg, data) {
             line.setAttribute("y2", y2);
             line.setAttribute("stroke", "red");
 
-            svg.appendChild(line);
+            g.appendChild(line);
         }
 
         nodes = nodes.concat(node.children);
@@ -146,6 +147,7 @@ function drawTree(svg, data) {
         circ.setAttribute("fill", "red");
         circ.setAttribute("r", NODE_SIZE);
 
-        svg.appendChild(circ);
+        g.appendChild(circ);
     }
+    svg.appendChild(g);
 }

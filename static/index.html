@@ -29,8 +29,6 @@
                     viewBox="0 0 1000 400"
                     preserveAspectRatio="xMidYMid meet"
                 >
-                    <g transform="translate(20, 100)">
-                    </g>
                 </svg>
             </div>
         </div>
@@ -84,7 +82,7 @@
                             );
                             widget = createLineWidget(error);
                         } else {
-                            drawTree(document.querySelector("svg g"), response.nodes);
+                            drawTree(document.querySelector("svg"), response.nodes);
                         }
                     });
             });
