@@ -123,6 +123,20 @@ class Summand(object):
 
 class FunctionCall(object):
     def __init__(self, s, loc, toks):
+        self.fun_name = toks[0]
+        self.summands = toks[1:]
+
+    def execute(self, context):
+        args = []
+        for summand in self.summands:
+            args.append(summand.execute(context))
+
+        if self.fun_name == "len":
+            return len(args[0])
+
+
+class MainCall(object):
+    def __init__(self, s, loc, toks):
         self.summands = toks
 
     def execute(self, context):
@@ -321,6 +335,7 @@ class Program(object):
 
 summand = pp.Forward()
 function_call = pp.Forward()
+main_call = pp.Forward()
 or_condition = pp.Forward()
 block = pp.Forward()
 loop = pp.Forward()
@@ -340,9 +355,10 @@ _if = pp.Keyword("if")
 _else = pp.Keyword("else")
 _return = pp.Keyword("return")
 _for = pp.Keyword("for")
+_len = pp.Keyword("len")
 fun = pp.Keyword("fun")
 
-keywords = _if | _else | _return | _for | fun
+keywords = _if | _else | _return | _for | _len | fun
 operator = pp.oneOf((">", ">=", "<", "<=", "==", "!="))
 
 number = (
@@ -359,7 +375,7 @@ identifier = (
 identifier.setParseAction(Identifier)
 
 array = (lbrack + pp.delimitedList(summand) + rbrack).setParseAction(Array)
-value = number | array | identifier | function_call
+value = number | array | identifier | function_call | main_call
 term = (value | (lparen + summand + rparen)).setParseAction(Term)
 factor = (term + pp.ZeroOrMore(pp.oneOf(("*", "/")) + term)).setParseAction(Factor)
 
@@ -367,9 +383,14 @@ summand << factor + pp.ZeroOrMore(pp.oneOf(("+", "-")) + factor)
 summand.setParseAction(Summand)
 
 function_call << (
-    fun.suppress() + lparen + pp.Optional(pp.delimitedList(summand)) + rparen
+    _len + lparen + pp.Optional(pp.delimitedList(summand)) + rparen
 )
 function_call.setParseAction(FunctionCall)
+
+main_call << (
+    fun.suppress() + lparen + pp.Optional(pp.delimitedList(summand)) + rparen
+)
+main_call.setParseAction(MainCall)
 
 assignment = (identifier + pp.Suppress("=") + summand).setParseAction(Assignment)
 expression = (summand + pp.Optional(operator + summand)).setParseAction(Test)
@@ -428,7 +449,7 @@ fundef = (
     + rbrace
 ).setParseAction(FunctionDef)
 
-program = (fundef + function_call + semicolon).setParseAction(Program)
+program = (fundef + main_call + semicolon).setParseAction(Program)
 
 
 def parse(code):
