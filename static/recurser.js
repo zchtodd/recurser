@@ -235,9 +235,7 @@ function drawTree(svg, data) {
 
         text.setAttribute("x", x1);
         text.setAttribute("y", y1);
-        text.setAttribute("stroke", "white");
-        text.setAttribute("text-anchor", "middle");
-        text.setAttribute("font-size", "16px");
+        text.setAttribute("class", "funcall");
         text.textContent =
             "fun(" +
             node.dataNode.args.join(", ") +

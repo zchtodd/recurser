@@ -83,3 +83,11 @@ h1 {
 .error-bg {
     background-color: #800000;
 }
+
+.funcall {
+    fill: white;
+    stroke-width: 0;
+    text-anchor: middle;
+    font-size: 16px;
+    font-family: Lucida Console, monospace;
+}
