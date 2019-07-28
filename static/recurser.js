@@ -24,6 +24,13 @@ let height = 400 - margin.top - margin.bottom;
 
 let NODE_SIZE = 30;
 
+/*
+** Tree drawing algorithm made possible and inspired by the code
+** and explanation from Rachel Lim:
+**
+** https://rachel53461.wordpress.com/
+*/
+
 class Node {
     constructor(x, y, prevSibling) {
         this.x = x;
