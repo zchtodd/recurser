@@ -66,12 +66,27 @@ class Number(object):
         return float(self.value)
 
 
+class Array(object):
+    def __init__(self, s, loc, toks):
+        self.value = toks
+
+    def execute(self, context):
+        return [elem.execute(context) for elem in self.value]
+
+
 class Identifier(object):
     def __init__(self, s, loc, toks):
         self.value = toks[0]
+        self.array_access = None
+
+        if len(toks) > 1:
+            self.array_access = toks[1]
 
     def execute(self, context):
-        return context.values[self.value]
+        value = context.values[self.value]
+        if self.array_access:
+            return value[int(self.array_access.execute(context))]
+        return value
 
 
 class Term(object):
@@ -195,7 +210,14 @@ class Assignment(object):
         self.summand = toks[1]
 
     def execute(self, context):
-        context.values[self.var.value] = self.summand.execute(context)
+        varname = self.var.value
+        new_val = self.summand.execute(context)
+
+        if self.var.array_access:
+            index = int(self.var.array_access.execute(context))
+            context.values[varname][index] = new_val
+        else:
+            context.values[varname] = new_val
 
 
 class SimpleStmt(object):
@@ -258,6 +280,26 @@ class Block(object):
                 return ret
 
 
+class Loop(object):
+    def __init__(self, s, loc, toks):
+        self.init = toks[0]
+        self.condition = toks[1]
+        self.post = toks[2]
+        self.block = toks[3]
+
+    def execute(self, context):
+        self.init.execute(context)
+        while True:
+            if not self.condition.execute(context):
+                break
+
+            ret = self.block.execute(context)
+            self.post.execute(context)
+
+            if isinstance(ret, ReturnValue):
+                return ret
+
+
 class FunctionDef(object):
     def __init__(self, s, loc, toks):
         self.parameters = toks[0]
@@ -277,10 +319,19 @@ class Program(object):
         return self.call.execute(context)
 
 
+summand = pp.Forward()
+function_call = pp.Forward()
+or_condition = pp.Forward()
+block = pp.Forward()
+loop = pp.Forward()
+
 lparen = pp.Suppress("(")
 rparen = pp.Suppress(")")
 lbrace = pp.Suppress("{")
 rbrace = pp.Suppress("}")
+lbrack = pp.Suppress("[")
+rbrack = pp.Suppress("]")
+
 _and = pp.Suppress("&&")
 _or = pp.Suppress("||")
 semicolon = pp.Suppress(";")
@@ -288,9 +339,10 @@ semicolon = pp.Suppress(";")
 _if = pp.Keyword("if")
 _else = pp.Keyword("else")
 _return = pp.Keyword("return")
+_for = pp.Keyword("for")
 fun = pp.Keyword("fun")
 
-keywords = _if | _else | _return | fun
+keywords = _if | _else | _return | _for | fun
 operator = pp.oneOf((">", ">=", "<", "<=", "==", "!="))
 
 number = (
@@ -301,13 +353,13 @@ number = (
     )
 ).setParseAction(Number)
 
-identifier = ~keywords + pp.Word(pp.alphanums + "_")
+identifier = (
+    ~keywords + pp.Word(pp.alphanums + "_") + pp.Optional(lbrack + summand + rbrack)
+)
 identifier.setParseAction(Identifier)
 
-summand = pp.Forward()
-function_call = pp.Forward()
-
-value = number | identifier | function_call
+array = (lbrack + pp.delimitedList(summand) + rbrack).setParseAction(Array)
+value = number | array | identifier | function_call
 term = (value | (lparen + summand + rparen)).setParseAction(Term)
 factor = (term + pp.ZeroOrMore(pp.oneOf(("*", "/")) + term)).setParseAction(Factor)
 
@@ -319,12 +371,7 @@ function_call << (
 )
 function_call.setParseAction(FunctionCall)
 
-test = pp.Forward()
-or_condition = pp.Forward()
-block = pp.Forward()
-
 assignment = (identifier + pp.Suppress("=") + summand).setParseAction(Assignment)
-
 expression = (summand + pp.Optional(operator + summand)).setParseAction(Test)
 
 condition = (expression | (lparen + or_condition + rparen)).setParseAction(Condition)
@@ -352,9 +399,24 @@ return_stmt = (_return.suppress() + expression).setParseAction(Return)
 simple_stmt = ((assignment | return_stmt | expression) + semicolon).setParseAction(
     SimpleStmt
 )
-statement = (if_cond | simple_stmt).setParseAction(Statement)
+statement = (loop | if_cond | simple_stmt).setParseAction(Statement)
 
 block << pp.ZeroOrMore(statement).setParseAction(Block)
+
+loop << (
+    _for.suppress()
+    + lparen
+    + assignment
+    + semicolon
+    + or_condition
+    + semicolon
+    + assignment
+    + rparen
+    + lbrace
+    + block
+    + rbrace
+)
+loop.setParseAction(Loop)
 
 fundef = (
     fun.suppress()
