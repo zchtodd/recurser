@@ -18,7 +18,7 @@ fun(5);`;
 
 let examples = { fibonacci: fibonacci, factorial: factorial };
 
-let margin = { top: 0, right: 0, bottom: 0, left: 0 };
+let margin = { top: 50, right: 0, bottom: 0, left: 0 };
 let width = 1000 - margin.left - margin.right;
 let height = 400 - margin.top - margin.bottom;
 
@@ -191,6 +191,7 @@ function drawTree(svg, data) {
     }
 
     let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("transform", `translate(${margin.left}, ${margin.top})`);
 
     let [treeWidth, treeHeight] = getDimensions(root);
     let levelWidth = width / (treeWidth + 1);
