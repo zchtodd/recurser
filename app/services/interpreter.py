@@ -109,15 +109,16 @@ class FunctionCall(object):
         self.summands = toks
 
     def execute(self, context):
+        frame = Frame()
         args = {}
+
         for param, summand in zip(context.fundef.parameters, self.summands):
             args[param.value] = summand.execute(context)
+            frame.args.append(args[param.value])
 
         if len(context.stack) >= MAX_STACK_LEN:
             raise StackException()
 
-        frame = Frame()
-        frame.args = args
         frame.values = args.copy()
 
         if not context.root_frame:

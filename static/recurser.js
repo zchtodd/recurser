@@ -16,7 +16,7 @@ let factorial = `fun(n) {
 
 fun(5);`;
 
-let examples = {fibonacci: fibonacci, factorial: factorial};
+let examples = { fibonacci: fibonacci, factorial: factorial };
 
 let margin = { top: 0, right: 0, bottom: 0, left: 0 };
 let width = 1000 - margin.left - margin.right;
@@ -25,14 +25,14 @@ let height = 400 - margin.top - margin.bottom;
 let NODE_SIZE = 30;
 
 /*
-** Tree drawing algorithm made possible and inspired by the code
-** and explanation from Rachel Lim:
-**
-** https://rachel53461.wordpress.com/
-*/
+ ** Tree drawing algorithm made possible and inspired by the code
+ ** and explanation from Rachel Lim:
+ **
+ ** https://rachel53461.wordpress.com/
+ */
 
 class Node {
-    constructor(x, y, prevSibling) {
+    constructor(x, y, prevSibling, dataNode) {
         this.x = x;
         this.y = y;
         this.finalY = 0;
@@ -40,6 +40,8 @@ class Node {
 
         this.prevSibling = prevSibling;
         this.children = [];
+
+        this.dataNode = dataNode;
     }
 }
 
@@ -108,11 +110,11 @@ function fixNodeConflicts(root) {
         if (botContour >= topContour) {
             shiftDown(root.children[i + 1], botContour - topContour + 3);
         }
-    } 
+    }
 }
 
 function buildTree(dataNode, prevSibling, level) {
-    let root = new Node(level, 0, prevSibling);
+    let root = new Node(level, 0, prevSibling, dataNode);
     for (let i = 0; i < dataNode.children.length; i++) {
         root.children.push(
             buildTree(
@@ -225,18 +227,6 @@ function drawTree(svg, data) {
 
         nodes = nodes.concat(node.children);
 
-        let circ = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "circle"
-        );
-
-        circ.setAttribute("cx", x1);
-        circ.setAttribute("cy", y1);
-        circ.setAttribute("fill", "steelblue");
-        circ.setAttribute("r", NODE_SIZE);
-
-        g.appendChild(circ);
-
         let text = document.createElementNS(
             "http://www.w3.org/2000/svg",
             "text"
@@ -244,7 +234,14 @@ function drawTree(svg, data) {
 
         text.setAttribute("x", x1);
         text.setAttribute("y", y1);
-        text.textContent = node.finalY;
+        text.setAttribute("stroke", "white");
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("font-size", "16px");
+        text.textContent =
+            "fun(" +
+            node.dataNode.args.join(", ") +
+            ") \u2192 " +
+            node.dataNode.retval;
 
         g.appendChild(text);
     }
