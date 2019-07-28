@@ -22,20 +22,19 @@
                 <div id="control-container">
                     <select id="examples-select" class="control">
                         <option value="fibonacci">Fibonacci</option>
-                        <option value="factorial">Factorial</option> 
+                        <option value="factorial">Factorial</option>
                     </select>
-                    <button id="play-btn" class="control"><i class="fa fa-play"></i>Play</button>
+                    <button id="play-btn" class="control">
+                        <i class="fa fa-play"></i>Play
+                    </button>
                 </div>
                 <textarea></textarea>
             </div>
             <div id="output">
                 <svg
-                    width="1000"
-                    height="400"
                     viewBox="0 0 1000 400"
                     preserveAspectRatio="xMidYMid meet"
-                >
-                </svg>
+                ></svg>
             </div>
         </div>
         <script>
@@ -95,7 +94,10 @@
                             );
                             widget = createLineWidget(error);
                         } else {
-                            drawTree(document.querySelector("svg"), response.nodes);
+                            drawTree(
+                                document.querySelector("svg"),
+                                response.nodes
+                            );
                         }
                     });
             });
