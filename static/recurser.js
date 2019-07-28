@@ -187,9 +187,11 @@ function setAnimTimers(root) {
             let lineEl = document.getElementById(`line-${_node.dataNode.count}`);
             let nodeEl = document.getElementById(`node-${_node.dataNode.count}`);
 
-            lineEl.classList.add("visible");
+            if (lineEl) {
+                lineEl.classList.add("visible");
+            }
             nodeEl.classList.add("visible");
-        }.bind(null, node), node.dataNode.count * 100);
+        }.bind(null, node), node.dataNode.count * 800);
     }
 }
 
@@ -239,7 +241,7 @@ function drawTree(svg, data) {
             line.setAttribute("y1", y1);
             line.setAttribute("x2", x2);
             line.setAttribute("y2", y2);
-            line.setAttribute("id", `line-${node.dataNode.count}`);
+            line.setAttribute("id", `line-${node.children[i].dataNode.count}`);
             line.setAttribute("class", "invisible");
             line.setAttribute("stroke", "steelblue");
 
