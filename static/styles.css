@@ -87,7 +87,6 @@ h1 {
 .label {
     fill: white;
     stroke-width: 0;
-    text-anchor: middle;
     font-size: 16px;
     font-family: Lucida Console, monospace;
 }

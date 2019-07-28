@@ -177,22 +177,28 @@ function getDimensions(root) {
     return [maxWidth - minWidth, maxHeight - minHeight];
 }
 
-function setAnimTimers(root) {
-    let nodes = [root];
-    while (nodes.length) {
-        let node = nodes.shift();
-        nodes = nodes.concat(node.children);
+function setAnimTimers(root, delay) {
+    setTimeout(function() {
+        let lineEl = document.getElementById(`line-${root.dataNode.count}`);
+        let funEl = document.getElementById(`funcall-${root.dataNode.count}`);
 
-        setTimeout(function(_node) {
-            let lineEl = document.getElementById(`line-${_node.dataNode.count}`);
-            let funEl = document.getElementById(`funcall-${_node.dataNode.count}`);
+        if (lineEl) {
+            lineEl.classList.add("visible");
+        }
+        funEl.classList.add("visible");
+    }, delay);
 
-            if (lineEl) {
-                lineEl.classList.add("visible");
-            }
-            funEl.classList.add("visible");
-        }.bind(null, node), node.dataNode.count * 800);
+    for (let i = 0; i < root.children.length; i++) {
+        delay = setAnimTimers(root.children[i], delay + 500);
     }
+
+    delay += 500;
+    setTimeout(function() {
+        let retEl = document.getElementById(`retval-${root.dataNode.count}`);
+        retEl.classList.add("visible");
+    }, delay);
+
+    return delay;
 }
 
 
@@ -203,7 +209,7 @@ function drawTree(svg, data) {
     calculateFinalValues(root, 0);
     updateYVals(root);
     fixNodeConflicts(root);
-    setAnimTimers(root);
+    setAnimTimers(root, 0);
 
     let existingG = svg.querySelector("g");
     if (existingG) {
@@ -212,6 +218,8 @@ function drawTree(svg, data) {
 
     let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.setAttribute("transform", `translate(${margin.left}, ${margin.top})`);
+
+    svg.appendChild(g);
 
     let [treeWidth, treeHeight] = getDimensions(root);
     let levelWidth = width / (treeWidth + 1);
@@ -264,16 +272,18 @@ function drawTree(svg, data) {
         funcall.setAttribute("y", y1);
         funcall.setAttribute("id", `funcall-${node.dataNode.count}`);
         funcall.setAttribute("class", "label invisible");
+        funcall.setAttribute("text-anchor", "middle");
         funcall.textContent = `fun(${node.dataNode.args.join(", ")})`;
 
-        retval.setAttribute("x", x1);
+        g.appendChild(funcall);
+
+        retval.setAttribute("x", x1 + funcall.getBBox().width + 4);
         retval.setAttribute("y", y1);
         retval.setAttribute("id", `retval-${node.dataNode.count}`);
         retval.setAttribute("class", "label invisible");
+        retval.setAttribute("text-anchor", "end");
         retval.textContent = "\u2192 " + node.dataNode.retval;
 
-        g.appendChild(funcall);
         g.appendChild(retval);
     }
-    svg.appendChild(g);
 }
