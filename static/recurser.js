@@ -185,12 +185,12 @@ function setAnimTimers(root) {
 
         setTimeout(function(_node) {
             let lineEl = document.getElementById(`line-${_node.dataNode.count}`);
-            let nodeEl = document.getElementById(`node-${_node.dataNode.count}`);
+            let funEl = document.getElementById(`funcall-${_node.dataNode.count}`);
 
             if (lineEl) {
                 lineEl.classList.add("visible");
             }
-            nodeEl.classList.add("visible");
+            funEl.classList.add("visible");
         }.bind(null, node), node.dataNode.count * 800);
     }
 }
@@ -250,22 +250,30 @@ function drawTree(svg, data) {
 
         nodes = nodes.concat(node.children);
 
-        let text = document.createElementNS(
+        let funcall = document.createElementNS(
             "http://www.w3.org/2000/svg",
             "text"
         );
 
-        text.setAttribute("x", x1);
-        text.setAttribute("y", y1);
-        text.setAttribute("id", `node-${node.dataNode.count}`);
-        text.setAttribute("class", "funcall invisible");
-        text.textContent =
-            "fun(" +
-            node.dataNode.args.join(", ") +
-            ") \u2192 " +
-            node.dataNode.retval;
+        let retval = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+        );
 
-        g.appendChild(text);
+        funcall.setAttribute("x", x1);
+        funcall.setAttribute("y", y1);
+        funcall.setAttribute("id", `funcall-${node.dataNode.count}`);
+        funcall.setAttribute("class", "label invisible");
+        funcall.textContent = `fun(${node.dataNode.args.join(", ")})`;
+
+        retval.setAttribute("x", x1);
+        retval.setAttribute("y", y1);
+        retval.setAttribute("id", `retval-${node.dataNode.count}`);
+        retval.setAttribute("class", "label invisible");
+        retval.textContent = "\u2192 " + node.dataNode.retval;
+
+        g.appendChild(funcall);
+        g.appendChild(retval);
     }
     svg.appendChild(g);
 }
