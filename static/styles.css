@@ -91,3 +91,13 @@ h1 {
     font-size: 16px;
     font-family: Lucida Console, monospace;
 }
+
+.invisible {
+    opacity: 0;
+}
+
+.visible {
+    opacity: 1;
+    transition-property: opacity;
+    transition-duration: 1s;
+}

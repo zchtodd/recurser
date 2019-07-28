@@ -177,6 +177,23 @@ function getDimensions(root) {
     return [maxWidth - minWidth, maxHeight - minHeight];
 }
 
+function setAnimTimers(root) {
+    let nodes = [root];
+    while (nodes.length) {
+        let node = nodes.shift();
+        nodes = nodes.concat(node.children);
+
+        setTimeout(function(_node) {
+            let lineEl = document.getElementById(`line-${_node.dataNode.count}`);
+            let nodeEl = document.getElementById(`node-${_node.dataNode.count}`);
+
+            lineEl.classList.add("visible");
+            nodeEl.classList.add("visible");
+        }.bind(null, node), node.dataNode.count * 100);
+    }
+}
+
+
 function drawTree(svg, data) {
     let root = buildTree(data, null, 0);
 
@@ -184,6 +201,7 @@ function drawTree(svg, data) {
     calculateFinalValues(root, 0);
     updateYVals(root);
     fixNodeConflicts(root);
+    setAnimTimers(root);
 
     let existingG = svg.querySelector("g");
     if (existingG) {
@@ -221,6 +239,8 @@ function drawTree(svg, data) {
             line.setAttribute("y1", y1);
             line.setAttribute("x2", x2);
             line.setAttribute("y2", y2);
+            line.setAttribute("id", `line-${node.dataNode.count}`);
+            line.setAttribute("class", "invisible");
             line.setAttribute("stroke", "steelblue");
 
             g.appendChild(line);
@@ -235,7 +255,8 @@ function drawTree(svg, data) {
 
         text.setAttribute("x", x1);
         text.setAttribute("y", y1);
-        text.setAttribute("class", "funcall");
+        text.setAttribute("id", `node-${node.dataNode.count}`);
+        text.setAttribute("class", "funcall invisible");
         text.textContent =
             "fun(" +
             node.dataNode.args.join(", ") +

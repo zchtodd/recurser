@@ -26,6 +26,7 @@ class StackException(Exception):
 
 class Frame(object):
     def __init__(self):
+        self.frame_count = 0
         self.args = []
         self.values = {}
         self.retval = None
@@ -42,6 +43,7 @@ class Frame(object):
 
 class Context(object):
     def __init__(self):
+        self.frame_count = 1
         self.root_frame = None
         self.fundef = None
         self.stack = []
@@ -110,8 +112,10 @@ class FunctionCall(object):
 
     def execute(self, context):
         frame = Frame()
-        args = {}
+        frame.frame_count = context.frame_count
+        context.frame_count += 1
 
+        args = {}
         for param, summand in zip(context.fundef.parameters, self.summands):
             args[param.value] = summand.execute(context)
             frame.args.append(args[param.value])

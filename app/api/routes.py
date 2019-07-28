@@ -8,7 +8,12 @@ from app.api import api_blueprint
 
 
 def build_nodes(root):
-    node = {"args": root.args, "retval": root.retval, "children": []}
+    node = {
+        "args": root.args,
+        "retval": root.retval,
+        "count": root.frame_count,
+        "children": [],
+    }
     for child in root.children:
         node["children"].append(build_nodes(child))
     return node
