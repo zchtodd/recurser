@@ -16,7 +16,25 @@ let factorial = `fun(n) {
 
 fun(5);`;
 
-let examples = { fibonacci: fibonacci, factorial: factorial };
+let steps = `fun(steps, jumps) {
+    if (steps == 0) {
+        return 1;
+    }
+
+    if (steps < 0) {
+        return 0;
+    }
+
+    ways = 0;
+    for (i = 0; i < len(jumps); i = i + 1) {
+        ways = ways + fun(steps - jumps[i], jumps);    
+    }
+    return ways;
+}
+
+fun(4, [1, 2, 3]);`
+
+let examples = { fibonacci: fibonacci, factorial: factorial, steps: steps };
 
 let margin = { top: 50, right: 0, bottom: 0, left: 0 };
 let width = 1000 - margin.left - margin.right;
@@ -263,27 +281,31 @@ function drawTree(svg, data) {
             "text"
         );
 
-        let retval = document.createElementNS(
+        let tspan1 = document.createElementNS(
             "http://www.w3.org/2000/svg",
-            "text"
+            "tspan"
         );
+
+        let tspan2 = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "tspan"
+        );
+
+        tspan1.textContent = `fun(${node.dataNode.args.join(", ")})`;
+        tspan2.textContent = " \u2192 " + node.dataNode.retval;
+
+        tspan1.setAttribute("id", `funcall-${node.dataNode.count}`);
+        tspan2.setAttribute("id", `retval-${node.dataNode.count}`);
+
+        tspan1.setAttribute("class", "label invisible");
+        tspan2.setAttribute("class", "label invisible");
 
         funcall.setAttribute("x", x1);
         funcall.setAttribute("y", y1);
-        funcall.setAttribute("id", `funcall-${node.dataNode.count}`);
-        funcall.setAttribute("class", "label invisible");
         funcall.setAttribute("text-anchor", "middle");
-        funcall.textContent = `fun(${node.dataNode.args.join(", ")})`;
 
+        funcall.appendChild(tspan1);
+        funcall.appendChild(tspan2);
         g.appendChild(funcall);
-
-        retval.setAttribute("x", x1 + funcall.getBBox().width + 4);
-        retval.setAttribute("y", y1);
-        retval.setAttribute("id", `retval-${node.dataNode.count}`);
-        retval.setAttribute("class", "label invisible");
-        retval.setAttribute("text-anchor", "end");
-        retval.textContent = "\u2192 " + node.dataNode.retval;
-
-        g.appendChild(retval);
     }
 }
