@@ -245,6 +245,18 @@ function assignSiblingCounts(root) {
     }
 }
 
+function getArgLabels(args) {
+    let res = [];
+    for (let i = 0; i < args.length; i++) {
+        if (Array.isArray(args[i])) {
+            res.push(`[${args[i].join(", ")}]`);
+        } else {
+            res.push(args[i] + "");
+        }
+    }
+    return res.join(", ");
+}
+
 function drawTree(svg, data) {
     let root = buildTree(data, null, null, 0);
 
@@ -320,7 +332,7 @@ function drawTree(svg, data) {
             "tspan"
         );
 
-        tspan1.textContent = `fun(${node.dataNode.args.join(", ")})`;
+        tspan1.textContent = `fun(${getArgLabels(node.dataNode.args)})`;
         tspan2.textContent = " \u2192 " + node.dataNode.retval;
 
         tspan1.setAttribute("id", `funcall-${node.dataNode.count}`);
