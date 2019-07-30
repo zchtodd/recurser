@@ -50,12 +50,13 @@ let NODE_SIZE = 30;
  */
 
 class Node {
-    constructor(x, y, prevSibling, dataNode) {
+    constructor(x, y, parent, prevSibling, dataNode) {
         this.x = x;
         this.y = y;
         this.finalY = 0;
         this.modifier = 0;
 
+        this.parent = parent;
         this.prevSibling = prevSibling;
         this.children = [];
 
@@ -131,12 +132,13 @@ function fixNodeConflicts(root) {
     }
 }
 
-function buildTree(dataNode, prevSibling, level) {
-    let root = new Node(level, 0, prevSibling, dataNode);
+function buildTree(dataNode, parent, prevSibling, level) {
+    let root = new Node(level, 0, parent, prevSibling, dataNode);
     for (let i = 0; i < dataNode.children.length; i++) {
         root.children.push(
             buildTree(
                 dataNode.children[i],
+                root,
                 i >= 1 ? root.children[i - 1] : null,
                 level + 1
             )
@@ -219,14 +221,38 @@ function setAnimTimers(root, delay) {
     return delay;
 }
 
+function assignSiblingCounts(root) {
+    let nodes = [root, null]
+    let level = [];
+
+    let siblings = 0;
+    while (nodes.length) {
+        let node = nodes.shift();
+        if (!node) {
+            for (let i = 0; i < level.length; i++) {
+                level[i].siblings = siblings;
+            }
+            level = [];
+            siblings = 0;
+            if (nodes.length) {
+                nodes.push(null);
+            }
+        } else {
+            nodes = nodes.concat(node.children);
+            siblings++;
+            level.push(node);
+        }
+    }
+}
 
 function drawTree(svg, data) {
-    let root = buildTree(data, null, 0);
+    let root = buildTree(data, null, null, 0);
 
     calculateInitialValues(root);
     calculateFinalValues(root, 0);
     updateYVals(root);
     fixNodeConflicts(root);
+    assignSiblingCounts(root);
     setAnimTimers(root, 0);
 
     let existingG = svg.querySelector("g");
@@ -247,9 +273,12 @@ function drawTree(svg, data) {
     let nodeOffsetX = levelWidth / 2 - NODE_SIZE / 2;
     let nodeOffsetY = levelHeight / 2 - NODE_SIZE / 2;
 
+    let fontSize = 16;
+
     let nodes = [root];
     while (nodes.length) {
         let node = nodes.shift();
+        let parent = node.parent;
 
         let x1 = node.x * levelWidth + nodeOffsetX;
         let y1 = node.finalY * levelHeight + nodeOffsetY;
@@ -303,6 +332,7 @@ function drawTree(svg, data) {
         funcall.setAttribute("x", x1);
         funcall.setAttribute("y", y1);
         funcall.setAttribute("text-anchor", "middle");
+        funcall.setAttribute("font-size", `${Math.max(fontSize - node.siblings, 8)}px`);
 
         funcall.appendChild(tspan1);
         funcall.appendChild(tspan2);
