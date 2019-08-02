@@ -34,9 +34,27 @@ let steps = `fun(steps, jumps) {
 
 fun(4, [1, 2, 3]);`
 
-let examples = { fibonacci: fibonacci, factorial: factorial, steps: steps };
+let coins = `fun(coins, change, start) {
+    if (change == 0) {
+        return 1;
+    }
 
-let margin = { top: 50, right: 0, bottom: 0, left: 0 };
+    if (change < 0) {
+        return 0;
+    }
+
+    ways = 0;
+    for (i = start; i < len(coins); i = i + 1) {
+        ways = ways + fun(coins, change - coins[i], i);
+    }
+    return ways;
+}
+
+fun([1, 5, 10], 10, 0);`
+
+let examples = { fibonacci: fibonacci, factorial: factorial, steps: steps, coins: coins };
+
+let margin = { top: 50, right: 10, bottom: 0, left: 60 };
 let width = 1000 - margin.left - margin.right;
 let height = 400 - margin.top - margin.bottom;
 
@@ -61,6 +79,7 @@ class Node {
         this.children = [];
 
         this.dataNode = dataNode;
+        this.collapse = false;
     }
 }
 
@@ -199,13 +218,19 @@ function getDimensions(root) {
 
 function setAnimTimers(root, delay) {
     setTimeout(function() {
+        let nodeEl = document.getElementById(`node-${root.dataNode.count}`);
         let lineEl = document.getElementById(`line-${root.dataNode.count}`);
         let funEl = document.getElementById(`funcall-${root.dataNode.count}`);
 
+        if (nodeEl) {
+            nodeEl.classList.add("visible");
+        }
         if (lineEl) {
             lineEl.classList.add("visible");
         }
-        funEl.classList.add("visible");
+        if (funEl) {
+            funEl.classList.add("visible");
+        }
     }, delay);
 
     for (let i = 0; i < root.children.length; i++) {
@@ -215,7 +240,9 @@ function setAnimTimers(root, delay) {
     delay += 500;
     setTimeout(function() {
         let retEl = document.getElementById(`retval-${root.dataNode.count}`);
-        retEl.classList.add("visible");
+        if (retEl) {
+            retEl.classList.add("visible");
+        }
     }, delay);
 
     return delay;
@@ -249,7 +276,7 @@ function getArgLabels(args) {
     let res = [];
     for (let i = 0; i < args.length; i++) {
         if (Array.isArray(args[i])) {
-            res.push(`[${args[i].join(", ")}]`);
+            res.push(`[...]`);
         } else {
             res.push(args[i] + "");
         }
@@ -266,6 +293,11 @@ function drawTree(svg, data) {
     fixNodeConflicts(root);
     assignSiblingCounts(root);
     setAnimTimers(root, 0);
+
+    let existingNotice = svg.querySelector("text");
+    if (existingNotice) {
+        svg.removeChild(existingNotice);
+    }
 
     let existingG = svg.querySelector("g");
     if (existingG) {
@@ -284,6 +316,7 @@ function drawTree(svg, data) {
     NODE_SIZE = Math.min(NODE_SIZE, levelWidth, levelHeight);
     let nodeOffsetX = levelWidth / 2 - NODE_SIZE / 2;
     let nodeOffsetY = levelHeight / 2 - NODE_SIZE / 2;
+    let collapseNodes = false;
 
     let fontSize = 16;
 
@@ -341,6 +374,7 @@ function drawTree(svg, data) {
         tspan1.setAttribute("class", "label invisible");
         tspan2.setAttribute("class", "label invisible");
 
+        funcall.setAttribute("id", `funcall-${node.dataNode.count}-container`);
         funcall.setAttribute("x", x1);
         funcall.setAttribute("y", y1);
         funcall.setAttribute("text-anchor", "middle");
@@ -348,6 +382,59 @@ function drawTree(svg, data) {
 
         funcall.appendChild(tspan1);
         funcall.appendChild(tspan2);
+
         g.appendChild(funcall);
+
+        let bbox = funcall.getBBox();
+
+        if ((bbox.width > levelWidth || bbox.height / 4 > levelHeight)) {
+            collapseNodes = true;
+        }
+    }
+
+    if (collapseNodes) {
+        let notice = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+        );
+        notice.textContent = "Node labels have been condensed into tooltips.";
+        notice.setAttribute("y", 20);
+        notice.setAttribute("fill", "white");
+        document.querySelector("svg").appendChild(notice);
+
+        let nodes = [root];
+        while (nodes.length) {
+            let node = nodes.shift();
+            nodes = nodes.concat(node.children);
+
+            let funcall = g.querySelector(`#funcall-${node.dataNode.count}-container`);
+
+            let circle = document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "circle"
+            );
+
+            let title = document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "title"
+            );
+
+            let x1 = node.x * levelWidth + nodeOffsetX;
+            let y1 = node.finalY * levelHeight + nodeOffsetY;
+
+            circle.setAttribute("id", `node-${node.dataNode.count}`);
+            circle.setAttribute("cx", x1);
+            circle.setAttribute("cy", y1);
+            circle.setAttribute("r", 4);
+            circle.setAttribute("fill", "steelblue");
+            circle.setAttribute("class", "invisible");
+
+            title.textContent = `fun(${getArgLabels(node.dataNode.args)})`
+            title.textContent += " \u2192 " + node.dataNode.retval;
+            circle.appendChild(title);
+
+            g.removeChild(funcall);
+            g.appendChild(circle);
+        }
     }
 }

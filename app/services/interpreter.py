@@ -18,10 +18,25 @@ ops_table = {
 }
 
 MAX_STACK_LEN = 16
+ITERATION_LIMIT = 1000
 
 
 class StackException(Exception):
     pass
+
+
+class IterationException(Exception):
+    pass
+
+
+class RuntimeException(Exception):
+    def __init__(self, message):
+        self.message = message
+        self.lineno = 0
+        self.col = 0
+
+    def __str__(self):
+        return self.message
 
 
 class Frame(object):
@@ -35,7 +50,10 @@ class Frame(object):
         self.children = []
 
     def __getitem__(self, key):
-        return self.values[key]
+        try:
+            return self.values[key]
+        except KeyError as err:
+            raise RuntimeException("Undefined: " + key)
 
     def __setitem__(self, key, value):
         self.values[key] = value
@@ -78,6 +96,7 @@ class Identifier(object):
     def __init__(self, s, loc, toks):
         self.value = toks[0]
         self.array_access = None
+        self.loc = loc
 
         if len(toks) > 1:
             self.array_access = toks[1]
@@ -85,7 +104,10 @@ class Identifier(object):
     def execute(self, context):
         value = context.values[self.value]
         if self.array_access:
-            return value[int(self.array_access.execute(context))]
+            try:
+                return value[int(self.array_access.execute(context))]
+            except IndexError as err:
+                raise RuntimeException(str(err))
         return value
 
 
@@ -303,7 +325,11 @@ class Loop(object):
 
     def execute(self, context):
         self.init.execute(context)
+        iterations = 0
         while True:
+            if iterations > ITERATION_LIMIT:
+                raise IterationException()
+
             if not self.condition.execute(context):
                 break
 
@@ -312,6 +338,7 @@ class Loop(object):
 
             if isinstance(ret, ReturnValue):
                 return ret
+            iterations += 1
 
 
 class FunctionDef(object):
@@ -382,14 +409,10 @@ factor = (term + pp.ZeroOrMore(pp.oneOf(("*", "/")) + term)).setParseAction(Fact
 summand << factor + pp.ZeroOrMore(pp.oneOf(("+", "-")) + factor)
 summand.setParseAction(Summand)
 
-function_call << (
-    _len + lparen + pp.Optional(pp.delimitedList(summand)) + rparen
-)
+function_call << (_len + lparen + pp.Optional(pp.delimitedList(summand)) + rparen)
 function_call.setParseAction(FunctionCall)
 
-main_call << (
-    fun.suppress() + lparen + pp.Optional(pp.delimitedList(summand)) + rparen
-)
+main_call << (fun.suppress() + lparen + pp.Optional(pp.delimitedList(summand)) + rparen)
 main_call.setParseAction(MainCall)
 
 assignment = (identifier + pp.Suppress("=") + summand).setParseAction(Assignment)
