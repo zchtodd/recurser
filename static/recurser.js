@@ -59,6 +59,7 @@ let width = 1000 - margin.left - margin.right;
 let height = 400 - margin.top - margin.bottom;
 
 let NODE_SIZE = 30;
+let timeouts = [];
 
 /*
  ** Tree drawing algorithm made possible and inspired by the code
@@ -216,8 +217,8 @@ function getDimensions(root) {
     return [maxWidth - minWidth, maxHeight - minHeight];
 }
 
-function setAnimTimers(root, delay) {
-    setTimeout(function() {
+function setAnimTimers(root, delay, delayIncrement) {
+    timeouts.push(setTimeout(function() {
         let nodeEl = document.getElementById(`node-${root.dataNode.count}`);
         let lineEl = document.getElementById(`line-${root.dataNode.count}`);
         let funEl = document.getElementById(`funcall-${root.dataNode.count}`);
@@ -231,19 +232,19 @@ function setAnimTimers(root, delay) {
         if (funEl) {
             funEl.classList.add("visible");
         }
-    }, delay);
+    }, delay));
 
     for (let i = 0; i < root.children.length; i++) {
-        delay = setAnimTimers(root.children[i], delay + 500);
+        delay = setAnimTimers(root.children[i], delay + delayIncrement, delayIncrement);
     }
 
-    delay += 500;
-    setTimeout(function() {
+    delay += delayIncrement;
+    timeouts.push(setTimeout(function() {
         let retEl = document.getElementById(`retval-${root.dataNode.count}`);
         if (retEl) {
             retEl.classList.add("visible");
         }
-    }, delay);
+    }, delay));
 
     return delay;
 }
@@ -287,14 +288,18 @@ function getArgLabels(args) {
 function drawTree(svg, data) {
     let root = buildTree(data, null, null, 0);
 
+    for (let i = 0; i < timeouts.length; i++) {
+        clearTimeout(timeouts[i]);
+    }
+    timeouts = [];
+
     calculateInitialValues(root);
     calculateFinalValues(root, 0);
     updateYVals(root);
     fixNodeConflicts(root);
     assignSiblingCounts(root);
-    setAnimTimers(root, 0);
 
-    let existingNotice = svg.querySelector("text");
+    let existingNotice = svg.querySelector("#notice");
     if (existingNotice) {
         svg.removeChild(existingNotice);
     }
@@ -320,6 +325,7 @@ function drawTree(svg, data) {
 
     let fontSize = 16;
 
+    let nodeCount = 0;
     let nodes = [root];
     while (nodes.length) {
         let node = nodes.shift();
@@ -327,7 +333,8 @@ function drawTree(svg, data) {
 
         let x1 = node.x * levelWidth + nodeOffsetX;
         let y1 = node.finalY * levelHeight + nodeOffsetY;
-
+        
+        nodeCount += 1;
         for (let i = 0; i < node.children.length; i++) {
             let x2 = node.children[i].x * levelWidth + nodeOffsetX;
             let y2 = node.children[i].finalY * levelHeight + nodeOffsetY;
@@ -398,6 +405,7 @@ function drawTree(svg, data) {
             "text"
         );
         notice.textContent = "Node labels have been condensed into tooltips.";
+        notice.setAttribute("id", "notice");
         notice.setAttribute("y", 20);
         notice.setAttribute("fill", "white");
         document.querySelector("svg").appendChild(notice);
@@ -437,4 +445,7 @@ function drawTree(svg, data) {
             g.appendChild(circle);
         }
     }
+
+    let delayIncrement = Math.max(200, 600 - nodeCount * 10);
+    setAnimTimers(root, 0, delayIncrement);
 }
