@@ -28,6 +28,7 @@ h1 {
 }
 
 #output {
+    position: relative;
     margin-top: 20px;
     height: 40%;
 }
@@ -56,6 +57,26 @@ h1 {
     z-index: 9999;
     position: absolute;
     right: 25px;
+}
+
+#playback-controls {
+    z-index: 9999;
+    position: absolute;
+    left: 0px;
+    width: 215px;
+    top: 5px;
+}
+
+#playback-speed {
+    width: 100%;
+}
+
+#condensed-notice {
+    display: none;
+    z-index: 9999;
+    position: absolute;
+    right: 0px;
+    top: 5px;
 }
 
 #play-btn {

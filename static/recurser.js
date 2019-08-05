@@ -32,7 +32,7 @@ let steps = `fun(steps, jumps) {
     return ways;
 }
 
-fun(4, [1, 2, 3]);`
+fun(4, [1, 2, 3]);`;
 
 let coins = `fun(coins, change, start) {
     if (change == 0) {
@@ -50,15 +50,21 @@ let coins = `fun(coins, change, start) {
     return ways;
 }
 
-fun([1, 5, 10], 10, 0);`
+fun([1, 5, 10], 10, 0);`;
 
-let examples = { fibonacci: fibonacci, factorial: factorial, steps: steps, coins: coins };
+let examples = {
+    fibonacci: fibonacci,
+    factorial: factorial,
+    steps: steps,
+    coins: coins
+};
 
 let margin = { top: 50, right: 10, bottom: 0, left: 60 };
 let width = 1000 - margin.left - margin.right;
 let height = 400 - margin.top - margin.bottom;
 
 let NODE_SIZE = 30;
+let nodeCount = 0;
 let timeouts = [];
 
 /*
@@ -217,40 +223,67 @@ function getDimensions(root) {
     return [maxWidth - minWidth, maxHeight - minHeight];
 }
 
-function setAnimTimers(root, delay, delayIncrement) {
-    timeouts.push(setTimeout(function() {
-        let nodeEl = document.getElementById(`node-${root.dataNode.count}`);
-        let lineEl = document.getElementById(`line-${root.dataNode.count}`);
-        let funEl = document.getElementById(`funcall-${root.dataNode.count}`);
+function setAnimTimers(root, delay, delayIncrement) {        
+    timeouts.push(
+        setTimeout(function() {
+            let nodeEl = document.getElementById(`node-${root.dataNode.count}`);
+            let lineEl = document.getElementById(`line-${root.dataNode.count}`);
+            let funEl = document.getElementById(
+                `funcall-${root.dataNode.count}`
+            );
 
-        if (nodeEl) {
-            nodeEl.classList.add("visible");
-        }
-        if (lineEl) {
-            lineEl.classList.add("visible");
-        }
-        if (funEl) {
-            funEl.classList.add("visible");
-        }
-    }, delay));
+            if (nodeEl) {
+                nodeEl.classList.add("visible");
+            }
+            if (lineEl) {
+                lineEl.classList.add("visible");
+            }
+            if (funEl) {
+                funEl.classList.add("visible");
+            }
+        }, delay)
+    );
 
     for (let i = 0; i < root.children.length; i++) {
-        delay = setAnimTimers(root.children[i], delay + delayIncrement, delayIncrement);
+        let childLine = document.getElementById(`line-${root.children[i].dataNode.count}`);
+        let lineVisible = false;
+        if (childLine && childLine.classList.contains("visible")) {
+            lineVisible = true; 
+        }
+
+        delay = setAnimTimers(
+            root.children[i],
+            lineVisible ? delay : delay + delayIncrement,
+            delayIncrement
+        );
     }
 
-    delay += delayIncrement;
-    timeouts.push(setTimeout(function() {
-        let retEl = document.getElementById(`retval-${root.dataNode.count}`);
-        if (retEl) {
-            retEl.classList.add("visible");
-        }
-    }, delay));
+    let retEl = document.getElementById(
+        `retval-${root.dataNode.count}`
+    );
+
+    let retVisible = true;
+    if (retEl && !retEl.classList.contains("visible")) {
+        retVisible = false;
+    }
+
+    delay += retVisible ? 0 : delayIncrement;
+    timeouts.push(
+        setTimeout(function() {
+            let retEl = document.getElementById(
+                `retval-${root.dataNode.count}`
+            );
+            if (retEl) {
+                retEl.classList.add("visible");
+            }
+        }, delay)
+    );
 
     return delay;
 }
 
 function assignSiblingCounts(root) {
-    let nodes = [root, null]
+    let nodes = [root, null];
     let level = [];
 
     let siblings = 0;
@@ -299,10 +332,7 @@ function drawTree(svg, data) {
     fixNodeConflicts(root);
     assignSiblingCounts(root);
 
-    let existingNotice = svg.querySelector("#notice");
-    if (existingNotice) {
-        svg.removeChild(existingNotice);
-    }
+    document.querySelector("#condensed-notice").style.display = "none";
 
     let existingG = svg.querySelector("g");
     if (existingG) {
@@ -325,7 +355,7 @@ function drawTree(svg, data) {
 
     let fontSize = 16;
 
-    let nodeCount = 0;
+    nodeCount = 0;
     let nodes = [root];
     while (nodes.length) {
         let node = nodes.shift();
@@ -333,7 +363,7 @@ function drawTree(svg, data) {
 
         let x1 = node.x * levelWidth + nodeOffsetX;
         let y1 = node.finalY * levelHeight + nodeOffsetY;
-        
+
         nodeCount += 1;
         for (let i = 0; i < node.children.length; i++) {
             let x2 = node.children[i].x * levelWidth + nodeOffsetX;
@@ -385,7 +415,10 @@ function drawTree(svg, data) {
         funcall.setAttribute("x", x1);
         funcall.setAttribute("y", y1);
         funcall.setAttribute("text-anchor", "middle");
-        funcall.setAttribute("font-size", `${Math.max(fontSize - node.siblings, 8)}px`);
+        funcall.setAttribute(
+            "font-size",
+            `${Math.max(fontSize - node.siblings, 8)}px`
+        );
 
         funcall.appendChild(tspan1);
         funcall.appendChild(tspan2);
@@ -394,28 +427,22 @@ function drawTree(svg, data) {
 
         let bbox = funcall.getBBox();
 
-        if ((bbox.width > levelWidth || bbox.height / 4 > levelHeight)) {
+        if (bbox.width > levelWidth || bbox.height / 4 > levelHeight) {
             collapseNodes = true;
         }
     }
 
     if (collapseNodes) {
-        let notice = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "text"
-        );
-        notice.textContent = "Node labels have been condensed into tooltips.";
-        notice.setAttribute("id", "notice");
-        notice.setAttribute("y", 20);
-        notice.setAttribute("fill", "white");
-        document.querySelector("svg").appendChild(notice);
+        document.querySelector("#condensed-notice").style.display = "block";
 
         let nodes = [root];
         while (nodes.length) {
             let node = nodes.shift();
             nodes = nodes.concat(node.children);
 
-            let funcall = g.querySelector(`#funcall-${node.dataNode.count}-container`);
+            let funcall = g.querySelector(
+                `#funcall-${node.dataNode.count}-container`
+            );
 
             let circle = document.createElementNS(
                 "http://www.w3.org/2000/svg",
@@ -437,7 +464,7 @@ function drawTree(svg, data) {
             circle.setAttribute("fill", "steelblue");
             circle.setAttribute("class", "invisible");
 
-            title.textContent = `fun(${getArgLabels(node.dataNode.args)})`
+            title.textContent = `fun(${getArgLabels(node.dataNode.args)})`;
             title.textContent += " \u2192 " + node.dataNode.retval;
             circle.appendChild(title);
 
@@ -446,6 +473,8 @@ function drawTree(svg, data) {
         }
     }
 
-    let delayIncrement = Math.max(200, 600 - nodeCount * 10);
+    let baseSpeed = 2000 - document.querySelector("#playback-speed").value;
+    let delayIncrement = Math.max(100, baseSpeed - nodeCount * 10);
     setAnimTimers(root, 0, delayIncrement);
+    return root;
 }
