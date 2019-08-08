@@ -29,16 +29,6 @@ class IterationException(Exception):
     pass
 
 
-class RuntimeException(Exception):
-    def __init__(self, message):
-        self.message = message
-        self.lineno = 0
-        self.col = 0
-
-    def __str__(self):
-        return self.message
-
-
 class Frame(object):
     def __init__(self):
         self.frame_count = 0
@@ -53,7 +43,7 @@ class Frame(object):
         try:
             return self.values[key]
         except KeyError as err:
-            raise RuntimeException("Undefined: " + key)
+            raise pp.ParseException("Undefined: " + key)
 
     def __setitem__(self, key, value):
         self.values[key] = value
@@ -82,6 +72,14 @@ class Number(object):
 
     def execute(self, context):
         return float(self.value)
+
+
+class String(object):
+    def __init__(self, s, loc, toks):
+        self.value = "".join(toks[0])
+
+    def execute(self, context):
+        return self.value
 
 
 class Array(object):
@@ -155,6 +153,27 @@ class FunctionCall(object):
 
         if self.fun_name == "len":
             return len(args[0])
+        elif self.fun_name == "append":
+            if isinstance(args[0], str):
+                return args[0] + args[1]
+            else:
+                new_list = args[0][:]
+                new_list.append(args[1])
+                return new_list
+        elif self.fun_name == "insert":
+            if isinstance(args[0], str):
+                return args[0][: int(args[1])] + args[2] + args[0][int(args[1]) :]
+            else:
+                new_list = args[0][:]
+                new_list.insert(args[1], args[2])
+                return new_list
+        elif self.fun_name == "remove":
+            if isinstance(args[0], str):
+                return args[0].replace(args[1], "")
+            else:
+                new_list = args[0][:]
+                new_list.remove(args[1])
+                return new_list
 
 
 class MainCall(object):
@@ -189,6 +208,7 @@ class MainCall(object):
                 frame.retval = ret.value
                 context.stack.pop(0)
                 return ret.value
+        context.stack.pop(0)
 
 
 class Test(object):
@@ -248,7 +268,6 @@ class Assignment(object):
     def execute(self, context):
         varname = self.var.value
         new_val = self.summand.execute(context)
-
         if self.var.array_access:
             index = int(self.var.array_access.execute(context))
             context.values[varname][index] = new_val
@@ -357,7 +376,10 @@ class Program(object):
 
     def execute(self, context):
         self.fundef.execute(context)
-        return self.call.execute(context)
+        try:
+            return self.call.execute(context)
+        except TypeError as err:
+            raise pp.ParseException(str(err))
 
 
 summand = pp.Forward()
@@ -383,9 +405,13 @@ _else = pp.Keyword("else")
 _return = pp.Keyword("return")
 _for = pp.Keyword("for")
 _len = pp.Keyword("len")
+append = pp.Keyword("append")
+remove = pp.Keyword("remove")
+insert = pp.Keyword("insert")
 fun = pp.Keyword("fun")
 
-keywords = _if | _else | _return | _for | _len | fun
+keywords = _if | _else | _return | _for | fun
+function = _len | append | remove | insert
 operator = pp.oneOf((">", ">=", "<", "<=", "==", "!="))
 
 number = (
@@ -396,20 +422,25 @@ number = (
     )
 ).setParseAction(Number)
 
+string = pp.QuotedString(quoteChar='"').setParseAction(String)
+
 identifier = (
-    ~keywords + pp.Word(pp.alphanums + "_") + pp.Optional(lbrack + summand + rbrack)
+    ~keywords
+    + ~function
+    + pp.Word(pp.alphanums + "_")
+    + pp.Optional(lbrack + summand + rbrack)
 )
 identifier.setParseAction(Identifier)
 
-array = (lbrack + pp.delimitedList(summand) + rbrack).setParseAction(Array)
-value = number | array | identifier | function_call | main_call
+array = (lbrack + pp.Optional(pp.delimitedList(summand)) + rbrack).setParseAction(Array)
+value = number | array | identifier | string | function_call | main_call
 term = (value | (lparen + summand + rparen)).setParseAction(Term)
 factor = (term + pp.ZeroOrMore(pp.oneOf(("*", "/")) + term)).setParseAction(Factor)
 
 summand << factor + pp.ZeroOrMore(pp.oneOf(("+", "-")) + factor)
 summand.setParseAction(Summand)
 
-function_call << (_len + lparen + pp.Optional(pp.delimitedList(summand)) + rparen)
+function_call << (function + lparen + pp.Optional(pp.delimitedList(summand)) + rparen)
 function_call.setParseAction(FunctionCall)
 
 main_call << (fun.suppress() + lparen + pp.Optional(pp.delimitedList(summand)) + rparen)
@@ -465,7 +496,7 @@ loop.setParseAction(Loop)
 fundef = (
     fun.suppress()
     + lparen
-    + pp.Group(pp.delimitedList(identifier))
+    + pp.Group(pp.Optional(pp.delimitedList(identifier)))
     + rparen
     + lbrace
     + block

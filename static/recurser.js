@@ -52,10 +52,33 @@ let coins = `fun(coins, change, start) {
 
 fun([1, 5, 10], 10, 0);`;
 
+let stringperms = `fun(s, chosen, perms) {
+    if (len(s) == 0) {
+        perms = append(perms, chosen);
+        return perms;
+    }
+
+    for (i = 0; i < len(s); i = i + 1) {
+        c = s[i];
+
+        chosen = append(chosen, c);
+        s = remove(s, s[i]);
+
+        perms = fun(s, chosen, perms);
+
+        s = insert(s, i, c);
+        chosen = remove(chosen, c);
+    }
+    return perms;
+}
+
+fun("abc", "", []);`;
+
 let examples = {
     fibonacci: fibonacci,
     factorial: factorial,
     steps: steps,
+    stringperms: stringperms,
     coins: coins
 };
 
