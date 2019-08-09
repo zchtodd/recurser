@@ -54,20 +54,19 @@ fun([1, 5, 10], 10, 0);`;
 
 let stringperms = `fun(s, chosen, perms) {
     if (len(s) == 0) {
-        perms = append(perms, chosen);
-        return perms;
+        perms.append(chosen);
     }
 
     for (i = 0; i < len(s); i = i + 1) {
         c = s[i];
 
-        chosen = append(chosen, c);
-        s = remove(s, s[i]);
+        chosen = chosen + c;
+        s.replace(s[i], "");
 
         perms = fun(s, chosen, perms);
 
-        s = insert(s, i, c);
-        chosen = remove(chosen, c);
+        s.insert(i, c);
+        chosen.replace(c, "");
     }
     return perms;
 }
@@ -89,6 +88,8 @@ let height = 400 - margin.top - margin.bottom;
 let NODE_SIZE = 30;
 let nodeCount = 0;
 let timeouts = [];
+
+let argCache = {};
 
 /*
  ** Tree drawing algorithm made possible and inspired by the code
@@ -332,14 +333,19 @@ function assignSiblingCounts(root) {
 function getArgLabels(args) {
     let res = [];
     for (let i = 0; i < args.length; i++) {
-        res.push(getArgLabel(args[i]));
+        res.push(getArgLabel(args[i], true));
     }
     return res.join(", ");
 }
 
-function getArgLabel(arg) {
+function getArgLabel(arg, useCache) {
     if (Array.isArray(arg)) {
-        return `[...]`;
+        let val = `[${arg.join(", ")}]`;
+        if (argCache[val] && useCache) {
+            return "[...]";
+        }
+        argCache[val] = true;
+        return val;
     } else if (typeof arg === "string") {
         return `'${arg}'`;
     }

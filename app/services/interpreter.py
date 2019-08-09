@@ -153,27 +153,30 @@ class FunctionCall(object):
 
         if self.fun_name == "len":
             return len(args[0])
-        elif self.fun_name == "append":
-            if isinstance(args[0], str):
-                return args[0] + args[1]
-            else:
-                new_list = args[0][:]
-                new_list.append(args[1])
-                return new_list
-        elif self.fun_name == "insert":
-            if isinstance(args[0], str):
-                return args[0][: int(args[1])] + args[2] + args[0][int(args[1]) :]
-            else:
-                new_list = args[0][:]
-                new_list.insert(args[1], args[2])
-                return new_list
-        elif self.fun_name == "remove":
-            if isinstance(args[0], str):
-                return args[0].replace(args[1], "")
-            else:
-                new_list = args[0][:]
-                new_list.remove(args[1])
-                return new_list
+
+
+class MethodCall(object):
+    def __init__(self, s, loc, toks):
+        self.identifier = toks[0]
+        self.func = toks[2]
+
+    def execute(self, context):
+        identval = self.identifier.execute(context)
+        fun_name = self.func.fun_name
+
+        if fun_name == "append":
+            value = identval + [self.func.summands[0].execute(context)]
+        elif fun_name == "insert":
+            index = int(self.func.summands[0].execute(context))
+            middle = self.func.summands[1].execute(context)
+            middle = [middle] if isinstance(identval, list) else middle
+            value = identval[: index] + middle + identval[index :]
+        elif fun_name == "replace":
+            args1 = self.func.summands[0].execute(context)
+            args2 = self.func.summands[1].execute(context)
+            value = identval.replace(args1, args2)
+
+        context.values[self.identifier.value] = value
 
 
 class MainCall(object):
@@ -384,6 +387,7 @@ class Program(object):
 
 summand = pp.Forward()
 function_call = pp.Forward()
+method_call = pp.Forward()
 main_call = pp.Forward()
 or_condition = pp.Forward()
 block = pp.Forward()
@@ -406,12 +410,12 @@ _return = pp.Keyword("return")
 _for = pp.Keyword("for")
 _len = pp.Keyword("len")
 append = pp.Keyword("append")
-remove = pp.Keyword("remove")
+replace = pp.Keyword("replace")
 insert = pp.Keyword("insert")
 fun = pp.Keyword("fun")
 
 keywords = _if | _else | _return | _for | fun
-function = _len | append | remove | insert
+function = _len | append | replace | insert
 operator = pp.oneOf((">", ">=", "<", "<=", "==", "!="))
 
 number = (
@@ -433,7 +437,7 @@ identifier = (
 identifier.setParseAction(Identifier)
 
 array = (lbrack + pp.Optional(pp.delimitedList(summand)) + rbrack).setParseAction(Array)
-value = number | array | identifier | string | function_call | main_call
+value = number | array | method_call | identifier | string | function_call | main_call
 term = (value | (lparen + summand + rparen)).setParseAction(Term)
 factor = (term + pp.ZeroOrMore(pp.oneOf(("*", "/")) + term)).setParseAction(Factor)
 
@@ -442,6 +446,9 @@ summand.setParseAction(Summand)
 
 function_call << (function + lparen + pp.Optional(pp.delimitedList(summand)) + rparen)
 function_call.setParseAction(FunctionCall)
+
+method_call << (identifier + "." + function_call)
+method_call.setParseAction(MethodCall)
 
 main_call << (fun.suppress() + lparen + pp.Optional(pp.delimitedList(summand)) + rparen)
 main_call.setParseAction(MainCall)

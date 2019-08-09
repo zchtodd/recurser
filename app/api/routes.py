@@ -3,12 +3,7 @@ import json
 from flask import request
 from pyparsing import ParseException
 
-from app.services.interpreter import (
-    StackException,
-    IterationException,
-    Context,
-    parse,
-)
+from app.services.interpreter import StackException, IterationException, Context, parse
 from app.api import api_blueprint
 
 
