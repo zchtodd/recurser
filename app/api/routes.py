@@ -4,7 +4,6 @@ from flask import request
 from pyparsing import ParseException
 
 from app.services.interpreter import (
-    RuntimeException,
     StackException,
     IterationException,
     Context,
@@ -34,7 +33,7 @@ def index():
 
     try:
         parse(data["code"]).execute(context)
-    except (ParseException, RuntimeException) as err:
+    except ParseException as err:
         res["error"] = {"lineno": err.lineno, "col": err.col, "message": str(err)}
     except StackException as err:
         res["error"] = {"lineno": 1, "col": 0, "message": "Stack limit exceeded."}

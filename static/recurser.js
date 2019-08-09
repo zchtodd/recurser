@@ -332,13 +332,18 @@ function assignSiblingCounts(root) {
 function getArgLabels(args) {
     let res = [];
     for (let i = 0; i < args.length; i++) {
-        if (Array.isArray(args[i])) {
-            res.push(`[...]`);
-        } else {
-            res.push(args[i] + "");
-        }
+        res.push(getArgLabel(args[i]));
     }
     return res.join(", ");
+}
+
+function getArgLabel(arg) {
+    if (Array.isArray(arg)) {
+        return `[...]`;
+    } else if (typeof arg === "string") {
+        return `'${arg}'`;
+    }
+    return arg + "";
 }
 
 function drawTree(svg, data) {
@@ -426,7 +431,7 @@ function drawTree(svg, data) {
         );
 
         tspan1.textContent = `fun(${getArgLabels(node.dataNode.args)})`;
-        tspan2.textContent = " \u2192 " + node.dataNode.retval;
+        tspan2.textContent = " \u2192 " + getArgLabel(node.dataNode.retval);
 
         tspan1.setAttribute("id", `funcall-${node.dataNode.count}`);
         tspan2.setAttribute("id", `retval-${node.dataNode.count}`);
@@ -488,7 +493,7 @@ function drawTree(svg, data) {
             circle.setAttribute("class", "invisible");
 
             title.textContent = `fun(${getArgLabels(node.dataNode.args)})`;
-            title.textContent += " \u2192 " + node.dataNode.retval;
+            title.textContent += " \u2192 " + getArgLabel(node.dataNode.retval);
             circle.appendChild(title);
 
             g.removeChild(funcall);
