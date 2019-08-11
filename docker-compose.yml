@@ -12,7 +12,7 @@ services:
             - ./static:/static
             - sock:/sock
         ports:
-            - "80:80"
+            - "5000:80"
 
     app:
         command: gunicorn --bind=unix:/sock/app.sock --workers=4 wsgi
