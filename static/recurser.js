@@ -71,7 +71,7 @@ let stringperms = `fun(s, chosen, perms) {
     return perms;
 }
 
-fun("abc", "", []);`;
+fun("ab", "", []);`;
 
 let examples = {
     fibonacci: fibonacci,

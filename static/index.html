@@ -10,6 +10,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.9.7/d3.js"></script>
         <script src="https://kit.fontawesome.com/2693b6feee.js"></script>
         <script src="/codemirror.js"></script>
+        <script src="/clike.js"></script>
         <script src="/recurser.js"></script>
     </head>
     <body>
@@ -54,7 +55,8 @@
             var animSpeedDial = document.querySelector("#playback-speed");
             var editor = CodeMirror.fromTextArea(textArea, {
                 lineNumbers: true,
-                theme: "pastel-on-dark"
+                theme: "pastel-on-dark",
+                mode: "text/x-c++src",
             });
 
             var root = null;

@@ -1,5 +1,6 @@
 import operator
 import pyparsing as pp
+pp.ParserElement.enablePackrat()
 
 
 ops_table = {
@@ -18,6 +19,7 @@ ops_table = {
 }
 
 MAX_STACK_LEN = 16
+MAX_FRAME_COUNT = 512
 ITERATION_LIMIT = 1000
 
 
@@ -96,16 +98,16 @@ class Identifier(object):
         self.array_access = None
         self.loc = loc
 
-        if len(toks) > 1:
-            self.array_access = toks[1]
+        if "array_index" in toks:
+            self.array_access = toks.array_index
 
     def execute(self, context):
         value = context.values[self.value]
         if self.array_access:
             try:
                 return value[int(self.array_access.execute(context))]
-            except IndexError as err:
-                raise RuntimeException(str(err))
+            except (TypeError, IndexError) as err:
+                raise pp.ParseException(err)
         return value
 
 
@@ -121,11 +123,15 @@ class Factor(object):
     def __init__(self, s, loc, toks):
         self.terms = toks[::2]
         self.ops = toks[1::2]
+        self.loc = loc
 
     def execute(self, context):
         val = self.terms[0].execute(context)
         for op, term in zip(self.ops, self.terms[1:]):
-            val = ops_table[op](val, term.execute(context))
+            try:
+                val = ops_table[op](val, term.execute(context))
+            except TypeError as err:
+                raise pp.ParseException(err, self.loc)
         return val
 
 
@@ -137,7 +143,10 @@ class Summand(object):
     def execute(self, context):
         val = self.factors[0].execute(context)
         for op, factor in zip(self.ops, self.factors[1:]):
-            val = ops_table[op](val, factor.execute(context))
+            try:
+                val = ops_table[op](val, factor.execute(context))
+            except TypeError as err:
+                raise pp.ParseException(err)
         return val
 
 
@@ -170,7 +179,7 @@ class MethodCall(object):
             index = int(self.func.summands[0].execute(context))
             middle = self.func.summands[1].execute(context)
             middle = [middle] if isinstance(identval, list) else middle
-            value = identval[: index] + middle + identval[index :]
+            value = identval[:index] + middle + identval[index:]
         elif fun_name == "replace":
             args1 = self.func.summands[0].execute(context)
             args2 = self.func.summands[1].execute(context)
@@ -193,7 +202,10 @@ class MainCall(object):
             args[param.value] = summand.execute(context)
             frame.args.append(args[param.value])
 
-        if len(context.stack) >= MAX_STACK_LEN:
+        if (
+            len(context.stack) >= MAX_STACK_LEN
+            or context.frame_count >= MAX_FRAME_COUNT
+        ):
             raise StackException()
 
         frame.values = args.copy()
@@ -300,8 +312,8 @@ class IfCondition(object):
         self.block = toks[1]
         self._else = None
 
-        if len(toks) == 3:
-            self._else = toks[2]
+        if "else_clause" in toks:
+            self._else = toks.else_clause
 
     def execute(self, context):
         if self.or_condition.execute(context):
@@ -379,10 +391,11 @@ class Program(object):
 
     def execute(self, context):
         self.fundef.execute(context)
+
         try:
             return self.call.execute(context)
-        except TypeError as err:
-            raise pp.ParseException(str(err))
+        except Exception as err:
+            raise pp.ParseException(err)
 
 
 summand = pp.Forward()
@@ -418,21 +431,14 @@ keywords = _if | _else | _return | _for | fun
 function = _len | append | replace | insert
 operator = pp.oneOf((">", ">=", "<", "<=", "==", "!="))
 
-number = (
-    pp.Combine(
-        pp.Optional("-")
-        + pp.Word(pp.nums)
-        + pp.Optional("." + pp.OneOrMore(pp.Word(pp.nums)))
-    )
-).setParseAction(Number)
-
+number = pp.Regex(r'-?\d+(\.\d*)?').setParseAction(Number)
 string = pp.QuotedString(quoteChar='"').setParseAction(String)
 
 identifier = (
     ~keywords
     + ~function
     + pp.Word(pp.alphanums + "_")
-    + pp.Optional(lbrack + summand + rbrack)
+    + pp.Optional(lbrack + summand("array_index") + rbrack)
 )
 identifier.setParseAction(Identifier)
 
@@ -441,16 +447,16 @@ value = number | array | method_call | identifier | string | function_call | mai
 term = (value | (lparen + summand + rparen)).setParseAction(Term)
 factor = (term + pp.ZeroOrMore(pp.oneOf(("*", "/")) + term)).setParseAction(Factor)
 
-summand << factor + pp.ZeroOrMore(pp.oneOf(("+", "-")) + factor)
+summand <<= factor + pp.ZeroOrMore(pp.oneOf(("+", "-")) + factor)
 summand.setParseAction(Summand)
 
-function_call << (function + lparen + pp.Optional(pp.delimitedList(summand)) + rparen)
+function_call <<= (function + lparen + pp.Optional(pp.delimitedList(summand)) + rparen)
 function_call.setParseAction(FunctionCall)
 
-method_call << (identifier + "." + function_call)
+method_call <<= (identifier + "." + function_call)
 method_call.setParseAction(MethodCall)
 
-main_call << (fun.suppress() + lparen + pp.Optional(pp.delimitedList(summand)) + rparen)
+main_call <<= (fun.suppress() + lparen + pp.Optional(pp.delimitedList(summand)) + rparen)
 main_call.setParseAction(MainCall)
 
 assignment = (identifier + pp.Suppress("=") + summand).setParseAction(Assignment)
@@ -460,10 +466,10 @@ condition = (expression | (lparen + or_condition + rparen)).setParseAction(Condi
 and_condition = (condition + pp.ZeroOrMore(_and + condition)).setParseAction(
     AndCondition
 )
-or_condition << and_condition + pp.ZeroOrMore(_or + and_condition)
+or_condition <<= and_condition + pp.ZeroOrMore(_or + and_condition)
 or_condition.setParseAction(OrCondition)
 
-else_cond = (_else.suppress() + lbrace + block + rbrace).setParseAction(ElseCondition)
+else_cond = (_else.suppress() - lbrace + block + rbrace).setParseAction(ElseCondition)
 
 if_cond = (
     _if.suppress()
@@ -473,7 +479,7 @@ if_cond = (
     + lbrace
     + block
     + rbrace
-    + pp.Optional(else_cond)
+    + pp.Optional(else_cond("else_clause"))
 ).setParseAction(IfCondition)
 
 return_stmt = (_return.suppress() + expression).setParseAction(Return)
@@ -483,17 +489,17 @@ simple_stmt = ((assignment | return_stmt | expression) + semicolon).setParseActi
 )
 statement = (loop | if_cond | simple_stmt).setParseAction(Statement)
 
-block << pp.ZeroOrMore(statement).setParseAction(Block)
+block <<= pp.ZeroOrMore(statement).setParseAction(Block)
 
-loop << (
+loop <<= (
     _for.suppress()
-    + lparen
+    - lparen
     + assignment
     + semicolon
     + or_condition
     + semicolon
     + assignment
-    + rparen
+    - rparen
     + lbrace
     + block
     + rbrace
@@ -511,6 +517,7 @@ fundef = (
 ).setParseAction(FunctionDef)
 
 program = (fundef + main_call + semicolon).setParseAction(Program)
+program.ignore(pp.cppStyleComment | pp.pythonStyleComment)
 
 
 def parse(code):
