@@ -29,3 +29,7 @@ Types include numbers, strings, and arrays.  Strings are defined with double quo
 | insert        | Insert in specific position any type of element.      | `x.insert(1, "a");`          |
 | pop           | Pop element from array at the specified position.     | `x.pop(0);`                  |
 | replace       | Replace first argument with the second in a string.   | `x.replace("hello", "hi");`  |
+
+## Comments
+
+Both C-style and Python style comments are supported.
