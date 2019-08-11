@@ -5,7 +5,7 @@ let fibonacci = `fun(n) {
     return fun(n - 1) + fun(n - 2);
 }
 
-fun(5);`;
+fun(6);`;
 
 let factorial = `fun(n) {
     if (n <= 1) {
@@ -15,6 +15,17 @@ let factorial = `fun(n) {
 }
 
 fun(5);`;
+
+let addition = `
+fun(n) {
+    if (len(n)) {
+        return n.pop() + fun(n);
+    } else {
+        return 0;
+    }
+}
+
+fun([1, 2, 3, 4, 5]);`;
 
 let steps = `fun(steps, jumps) {
     if (steps == 0) {
@@ -76,6 +87,7 @@ fun("ab", "", []);`;
 let examples = {
     fibonacci: fibonacci,
     factorial: factorial,
+	addition: addition,
     steps: steps,
     stringperms: stringperms,
     coins: coins
@@ -338,13 +350,12 @@ function getArgLabels(args) {
     return res.join(", ");
 }
 
-function getArgLabel(arg, useCache) {
+function getArgLabel(arg, elide) {
     if (Array.isArray(arg)) {
-        let val = `[${arg.join(", ")}]`;
-        if (argCache[val] && useCache) {
+        if (elide) {
             return "[...]";
         }
-        argCache[val] = true;
+        let val = `[${arg.join(", ")}]`;
         return val;
     } else if (typeof arg === "string") {
         return `'${arg}'`;
