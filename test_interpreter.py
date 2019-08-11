@@ -50,7 +50,18 @@ class InterpreterTestCase(unittest.TestCase):
         context = Context()
         parse(shell % 'x = []; x.append("a");').execute(context)
         self.assertEqual(context.root_frame.values["x"], ["a"])
-  
+
+    def test_array_pop(self):
+        context = Context()
+        parse(shell % 'x = [1]; y = x.pop();').execute(context)
+        self.assertEqual(context.root_frame.values["x"], [])
+        self.assertEqual(context.root_frame.values["y"], 1)
+
+        context = Context()
+        parse(shell % 'x = [1, 2, 3]; y = x.pop(0);').execute(context)
+        self.assertEqual(context.root_frame.values["x"], [2.0, 3.0])
+        self.assertEqual(context.root_frame.values["y"], 1)
+
     def test_string_replace(self):
         context = Context()
         parse(shell % 'x = "a"; x.replace("a", "");').execute(context)

@@ -1,5 +1,6 @@
 import operator
 import pyparsing as pp
+
 pp.ParserElement.enablePackrat()
 
 
@@ -175,17 +176,29 @@ class MethodCall(object):
 
         if fun_name == "append":
             value = identval + [self.func.summands[0].execute(context)]
+
+            context.values[self.identifier.value] = value
         elif fun_name == "insert":
             index = int(self.func.summands[0].execute(context))
             middle = self.func.summands[1].execute(context)
             middle = [middle] if isinstance(identval, list) else middle
             value = identval[:index] + middle + identval[index:]
+
+            context.values[self.identifier.value] = value
         elif fun_name == "replace":
             args1 = self.func.summands[0].execute(context)
             args2 = self.func.summands[1].execute(context)
             value = identval.replace(args1, args2)
 
-        context.values[self.identifier.value] = value
+            context.values[self.identifier.value] = value
+        elif fun_name == "pop":
+            if len(self.func.summands) == 1:
+                index = int(self.func.summands[0].execute(context))
+                value = identval.pop(index)
+            else:
+                value = identval.pop()
+
+        return value
 
 
 class MainCall(object):
@@ -425,13 +438,14 @@ _len = pp.Keyword("len")
 append = pp.Keyword("append")
 replace = pp.Keyword("replace")
 insert = pp.Keyword("insert")
+pop = pp.Keyword("pop")
 fun = pp.Keyword("fun")
 
 keywords = _if | _else | _return | _for | fun
-function = _len | append | replace | insert
+function = _len | append | replace | insert | pop
 operator = pp.oneOf((">", ">=", "<", "<=", "==", "!="))
 
-number = pp.Regex(r'-?\d+(\.\d*)?').setParseAction(Number)
+number = pp.Regex(r"-?\d+(\.\d*)?").setParseAction(Number)
 string = pp.QuotedString(quoteChar='"').setParseAction(String)
 
 identifier = (
@@ -450,13 +464,13 @@ factor = (term + pp.ZeroOrMore(pp.oneOf(("*", "/")) + term)).setParseAction(Fact
 summand <<= factor + pp.ZeroOrMore(pp.oneOf(("+", "-")) + factor)
 summand.setParseAction(Summand)
 
-function_call <<= (function + lparen + pp.Optional(pp.delimitedList(summand)) + rparen)
+function_call <<= function + lparen + pp.Optional(pp.delimitedList(summand)) + rparen
 function_call.setParseAction(FunctionCall)
 
-method_call <<= (identifier + "." + function_call)
+method_call <<= identifier + "." + function_call
 method_call.setParseAction(MethodCall)
 
-main_call <<= (fun.suppress() + lparen + pp.Optional(pp.delimitedList(summand)) + rparen)
+main_call <<= fun.suppress() + lparen + pp.Optional(pp.delimitedList(summand)) + rparen
 main_call.setParseAction(MainCall)
 
 assignment = (identifier + pp.Suppress("=") + summand).setParseAction(Assignment)
