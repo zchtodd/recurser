@@ -6,6 +6,7 @@ volumes:
 services:
     nginx:
         image: nginx
+        restart: always
         volumes:
             - ./nginx.conf:/etc/nginx/nginx.conf
             - ./static:/static
@@ -15,6 +16,7 @@ services:
 
     app:
         command: gunicorn --bind=unix:/sock/app.sock --workers=4 wsgi
+        restart: always
         image: recurser
         volumes:
             - ./:/usr/src/app
