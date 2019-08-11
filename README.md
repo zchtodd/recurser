@@ -1,3 +1,5 @@
+# Recurser
+
 ![recurser](https://media.giphy.com/media/H1MZob5ZSIUAJrzQKv/giphy.gif)
 
 An aide to learning recursion through visualization.
