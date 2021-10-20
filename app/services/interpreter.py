@@ -407,6 +407,8 @@ class Program(object):
 
         try:
             return self.call.execute(context)
+        except StackException as err:
+            raise
         except Exception as err:
             raise pp.ParseException(err)
 
